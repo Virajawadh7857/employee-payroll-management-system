@@ -36,6 +36,14 @@ public class EmployeeService {
 	    return employeeRepository.findAll(pageable)
 	            .map(EmployeeMapper::toResponse);
 	}
+	
+	public Page<EmployeeResponse> searchEmployees(String search, Pageable pageable) {
+	    return employeeRepository
+	            .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+	                    search, search, search, pageable)
+	            .map(EmployeeMapper::toResponse);
+	}
+	
 	public EmployeeResponse getEmployeeById(Long id) {
 
 		Employee employee = employeeRepository.findById(id)

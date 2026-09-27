@@ -114,11 +114,7 @@ class EmployeeServiceTest {
 
 		Pageable pageable = PageRequest.of(0, 10);
 
-		Page<Employee> employeePage = new PageImpl<>(
-				List.of(employee1, employee2),
-				pageable,
-				2
-		);
+		Page<Employee> employeePage = new PageImpl<>(List.of(employee1, employee2), pageable, 2);
 
 		when(employeeRepository.findAll(pageable)).thenReturn(employeePage);
 
@@ -141,6 +137,43 @@ class EmployeeServiceTest {
 	}
 
 	@Test
+	void searchEmployees_shouldReturnMatchingEmployees() {
+		// Arrange
+		Employee employee = new Employee();
+		employee.setId(1L);
+		employee.setFirstName("Rahul");
+		employee.setLastName("Kumar");
+		employee.setEmail("rahul@gmail.com");
+		employee.setPhone("9878587459");
+		employee.setDepartment("IT");
+		employee.setJobTitle("Java Developer");
+		employee.setSalary(new BigDecimal("60000"));
+		employee.setJoiningDate(LocalDate.of(2026, 8, 1));
+		employee.setRole("EMPLOYEE");
+
+		Pageable pageable = PageRequest.of(0, 10);
+
+		Page<Employee> employeePage = new PageImpl<>(List.of(employee), pageable, 1);
+
+		when(employeeRepository
+				.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase("rahul",
+						"rahul", "rahul", pageable))
+				.thenReturn(employeePage);
+
+		// Act
+		Page<EmployeeResponse> responses = employeeService.searchEmployees("rahul", pageable);
+
+		// Assert
+		assertNotNull(responses);
+		assertEquals(1, responses.getContent().size());
+		assertEquals(1, responses.getTotalElements());
+		assertEquals(1, responses.getTotalPages());
+		assertEquals("Rahul", responses.getContent().get(0).getFirstName());
+		assertEquals("Kumar", responses.getContent().get(0).getLastName());
+		assertEquals("rahul@gmail.com", responses.getContent().get(0).getEmail());
+	}
+
+	@Test
 	void getEmployeeById_shouldReturnEmployee_whenEmployeeExists() {
 
 		// Arrange
@@ -157,8 +190,7 @@ class EmployeeServiceTest {
 		employee.setJoiningDate(LocalDate.of(2026, 8, 1));
 		employee.setRole("EMPLOYEE");
 
-		when(employeeRepository.findById(1L))
-				.thenReturn(java.util.Optional.of(employee));
+		when(employeeRepository.findById(1L)).thenReturn(java.util.Optional.of(employee));
 
 		// Act
 		EmployeeResponse response = employeeService.getEmployeeById(1L);
@@ -180,14 +212,10 @@ class EmployeeServiceTest {
 	void getEmployeeById_shouldThrowEmployeeNotFoundException_whenEmployeeDoesNotExist() {
 
 		// Arrange
-		when(employeeRepository.findById(999L))
-				.thenReturn(java.util.Optional.empty());
+		when(employeeRepository.findById(999L)).thenReturn(java.util.Optional.empty());
 
 		// Act & Assert
-		assertThrows(
-				EmployeeNotFoundException.class,
-				() -> employeeService.getEmployeeById(999L)
-		);
+		assertThrows(EmployeeNotFoundException.class, () -> employeeService.getEmployeeById(999L));
 	}
 
 	@Test
@@ -219,15 +247,12 @@ class EmployeeServiceTest {
 		request.setJoiningDate(LocalDate.of(2026, 8, 1));
 		request.setRole("EMPLOYEE");
 
-		when(employeeRepository.findById(1L))
-				.thenReturn(java.util.Optional.of(existingEmployee));
+		when(employeeRepository.findById(1L)).thenReturn(java.util.Optional.of(existingEmployee));
 
-		when(employeeRepository.save(existingEmployee))
-				.thenReturn(existingEmployee);
+		when(employeeRepository.save(existingEmployee)).thenReturn(existingEmployee);
 
 		// Act
-		EmployeeResponse response =
-				employeeService.updateEmployee(1L, request);
+		EmployeeResponse response = employeeService.updateEmployee(1L, request);
 
 		// Assert
 		assertNotNull(response);
@@ -259,14 +284,10 @@ class EmployeeServiceTest {
 		request.setJoiningDate(LocalDate.of(2026, 8, 1));
 		request.setRole("EMPLOYEE");
 
-		when(employeeRepository.findById(999L))
-				.thenReturn(java.util.Optional.empty());
+		when(employeeRepository.findById(999L)).thenReturn(java.util.Optional.empty());
 
 		// Act & Assert
-		assertThrows(
-				EmployeeNotFoundException.class,
-				() -> employeeService.updateEmployee(999L, request)
-		);
+		assertThrows(EmployeeNotFoundException.class, () -> employeeService.updateEmployee(999L, request));
 	}
 
 	@Test
@@ -286,29 +307,23 @@ class EmployeeServiceTest {
 		employee.setJoiningDate(LocalDate.of(2026, 8, 1));
 		employee.setRole("EMPLOYEE");
 
-		when(employeeRepository.findById(1L))
-				.thenReturn(java.util.Optional.of(employee));
+		when(employeeRepository.findById(1L)).thenReturn(java.util.Optional.of(employee));
 
 		// Act
 		employeeService.deleteEmployee(1L);
 
 		// Assert
-		org.mockito.Mockito.verify(employeeRepository)
-				.delete(employee);
+		org.mockito.Mockito.verify(employeeRepository).delete(employee);
 	}
 
 	@Test
 	void deleteEmployee_shouldThrowEmployeeNotFoundException_whenEmployeeDoesNotExist() {
 
 		// Arrange
-		when(employeeRepository.findById(999L))
-				.thenReturn(java.util.Optional.empty());
+		when(employeeRepository.findById(999L)).thenReturn(java.util.Optional.empty());
 
 		// Act & Assert
-		assertThrows(
-				EmployeeNotFoundException.class,
-				() -> employeeService.deleteEmployee(999L)
-		);
+		assertThrows(EmployeeNotFoundException.class, () -> employeeService.deleteEmployee(999L));
 	}
 
 	@Test
