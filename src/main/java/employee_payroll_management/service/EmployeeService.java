@@ -11,6 +11,9 @@ import employee_payroll_management.dto.EmployeeRequest;
 import employee_payroll_management.dto.EmployeeResponse;
 import employee_payroll_management.mapper.EmployeeMapper;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 @Service
 public class EmployeeService {
 
@@ -29,11 +32,10 @@ public class EmployeeService {
 		return EmployeeMapper.toResponse(savedEmployee);
 	}
 
-	public List<EmployeeResponse> getAllEmployees() {
-
-		return employeeRepository.findAll().stream().map(EmployeeMapper::toResponse).toList();
+	public Page<EmployeeResponse> getAllEmployees(Pageable pageable) {
+	    return employeeRepository.findAll(pageable)
+	            .map(EmployeeMapper::toResponse);
 	}
-
 	public EmployeeResponse getEmployeeById(Long id) {
 
 		Employee employee = employeeRepository.findById(id)

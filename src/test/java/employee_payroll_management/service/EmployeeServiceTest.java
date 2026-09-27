@@ -2,26 +2,29 @@ package employee_payroll_management.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import employee_payroll_management.dto.EmployeeRequest;
 import employee_payroll_management.dto.EmployeeResponse;
 import employee_payroll_management.entity.Employee;
-import employee_payroll_management.repository.EmployeeRepository;
-import java.util.List;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import employee_payroll_management.exception.EmployeeNotFoundException;
+import employee_payroll_management.repository.EmployeeRepository;
 
 @ExtendWith(MockitoExtension.class)
 class EmployeeServiceTest {
@@ -109,20 +112,32 @@ class EmployeeServiceTest {
 		employee2.setJoiningDate(LocalDate.of(2026, 8, 1));
 		employee2.setRole("EMPLOYEE");
 
-		when(employeeRepository.findAll()).thenReturn(List.of(employee1, employee2));
+		Pageable pageable = PageRequest.of(0, 10);
+
+		Page<Employee> employeePage = new PageImpl<>(
+				List.of(employee1, employee2),
+				pageable,
+				2
+		);
+
+		when(employeeRepository.findAll(pageable)).thenReturn(employeePage);
 
 		// Act
-		List<EmployeeResponse> responses = employeeService.getAllEmployees();
+		Page<EmployeeResponse> responses = employeeService.getAllEmployees(pageable);
 
 		// Assert
 		assertNotNull(responses);
-		assertEquals(2, responses.size());
+		assertEquals(2, responses.getContent().size());
+		assertEquals(2, responses.getTotalElements());
+		assertEquals(1, responses.getTotalPages());
+		assertEquals(0, responses.getNumber());
+		assertEquals(10, responses.getSize());
 
-		assertEquals(1L, responses.get(0).getId());
-		assertEquals("Rahul", responses.get(0).getFirstName());
+		assertEquals(1L, responses.getContent().get(0).getId());
+		assertEquals("Rahul", responses.getContent().get(0).getFirstName());
 
-		assertEquals(5L, responses.get(1).getId());
-		assertEquals("Vikash", responses.get(1).getFirstName());
+		assertEquals(5L, responses.getContent().get(1).getId());
+		assertEquals("Vikash", responses.getContent().get(1).getFirstName());
 	}
 
 	@Test
@@ -142,7 +157,8 @@ class EmployeeServiceTest {
 		employee.setJoiningDate(LocalDate.of(2026, 8, 1));
 		employee.setRole("EMPLOYEE");
 
-		when(employeeRepository.findById(1L)).thenReturn(java.util.Optional.of(employee));
+		when(employeeRepository.findById(1L))
+				.thenReturn(java.util.Optional.of(employee));
 
 		// Act
 		EmployeeResponse response = employeeService.getEmployeeById(1L);
@@ -164,10 +180,14 @@ class EmployeeServiceTest {
 	void getEmployeeById_shouldThrowEmployeeNotFoundException_whenEmployeeDoesNotExist() {
 
 		// Arrange
-		when(employeeRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+		when(employeeRepository.findById(999L))
+				.thenReturn(java.util.Optional.empty());
 
 		// Act & Assert
-		assertThrows(EmployeeNotFoundException.class, () -> employeeService.getEmployeeById(999L));
+		assertThrows(
+				EmployeeNotFoundException.class,
+				() -> employeeService.getEmployeeById(999L)
+		);
 	}
 
 	@Test
@@ -199,12 +219,15 @@ class EmployeeServiceTest {
 		request.setJoiningDate(LocalDate.of(2026, 8, 1));
 		request.setRole("EMPLOYEE");
 
-		when(employeeRepository.findById(1L)).thenReturn(java.util.Optional.of(existingEmployee));
+		when(employeeRepository.findById(1L))
+				.thenReturn(java.util.Optional.of(existingEmployee));
 
-		when(employeeRepository.save(existingEmployee)).thenReturn(existingEmployee);
+		when(employeeRepository.save(existingEmployee))
+				.thenReturn(existingEmployee);
 
 		// Act
-		EmployeeResponse response = employeeService.updateEmployee(1L, request);
+		EmployeeResponse response =
+				employeeService.updateEmployee(1L, request);
 
 		// Assert
 		assertNotNull(response);
@@ -236,10 +259,14 @@ class EmployeeServiceTest {
 		request.setJoiningDate(LocalDate.of(2026, 8, 1));
 		request.setRole("EMPLOYEE");
 
-		when(employeeRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+		when(employeeRepository.findById(999L))
+				.thenReturn(java.util.Optional.empty());
 
 		// Act & Assert
-		assertThrows(EmployeeNotFoundException.class, () -> employeeService.updateEmployee(999L, request));
+		assertThrows(
+				EmployeeNotFoundException.class,
+				() -> employeeService.updateEmployee(999L, request)
+		);
 	}
 
 	@Test
@@ -259,23 +286,29 @@ class EmployeeServiceTest {
 		employee.setJoiningDate(LocalDate.of(2026, 8, 1));
 		employee.setRole("EMPLOYEE");
 
-		when(employeeRepository.findById(1L)).thenReturn(java.util.Optional.of(employee));
+		when(employeeRepository.findById(1L))
+				.thenReturn(java.util.Optional.of(employee));
 
 		// Act
 		employeeService.deleteEmployee(1L);
 
 		// Assert
-		org.mockito.Mockito.verify(employeeRepository).delete(employee);
+		org.mockito.Mockito.verify(employeeRepository)
+				.delete(employee);
 	}
 
 	@Test
 	void deleteEmployee_shouldThrowEmployeeNotFoundException_whenEmployeeDoesNotExist() {
 
 		// Arrange
-		when(employeeRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+		when(employeeRepository.findById(999L))
+				.thenReturn(java.util.Optional.empty());
 
 		// Act & Assert
-		assertThrows(EmployeeNotFoundException.class, () -> employeeService.deleteEmployee(999L));
+		assertThrows(
+				EmployeeNotFoundException.class,
+				() -> employeeService.deleteEmployee(999L)
+		);
 	}
 
 	@Test

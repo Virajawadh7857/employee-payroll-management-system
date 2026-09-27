@@ -22,6 +22,11 @@ import employee_payroll_management.dto.EmployeeResponse;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/v1/employees")
@@ -46,8 +51,13 @@ public class EmployeeController {
 	}
 
 	@GetMapping
-	public List<EmployeeResponse> getAllEmployees() {
-		return employeeService.getAllEmployees();
+	public Page<EmployeeResponse> getAllEmployees(
+	        @RequestParam(defaultValue = "0") int page,
+	        @RequestParam(defaultValue = "10") int size) {
+
+	    Pageable pageable = PageRequest.of(page, size);
+
+	    return employeeService.getAllEmployees(pageable);
 	}
 
 	@GetMapping("/{id}")
