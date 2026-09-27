@@ -52,34 +52,25 @@ class EmployeeControllerTest {
 	@BeforeEach
 	void setUp() {
 
-		PageableHandlerMethodArgumentResolver pageableResolver =
-				new PageableHandlerMethodArgumentResolver();
+		PageableHandlerMethodArgumentResolver pageableResolver = new PageableHandlerMethodArgumentResolver();
 
-		mockMvc = MockMvcBuilders
-				.standaloneSetup(employeeController)
-				.setControllerAdvice(new GlobalExceptionHandler())
-				.setCustomArgumentResolvers(pageableResolver)
-				.build();
+		mockMvc = MockMvcBuilders.standaloneSetup(employeeController).setControllerAdvice(new GlobalExceptionHandler())
+				.setCustomArgumentResolvers(pageableResolver).build();
 	}
 
 	@Test
 	void hello_shouldReturnSuccessMessage() throws Exception {
 
 		// Arrange
-		when(employeeService.getMessage())
-				.thenReturn("Employee service is working!");
+		when(employeeService.getMessage()).thenReturn("Employee service is working!");
 
 		// Act & Assert
-		mockMvc.perform(get("/api/v1/employees/hello"))
-				.andExpect(status().isOk())
-				.andExpect(
-						content().string("Employee service is working!")
-				);
+		mockMvc.perform(get("/api/v1/employees/hello")).andExpect(status().isOk())
+				.andExpect(content().string("Employee service is working!"));
 	}
 
 	@Test
-	void getAllEmployees_shouldReturnPaginatedEmployeeResponse()
-			throws Exception {
+	void getAllEmployees_shouldReturnPaginatedEmployeeResponse() throws Exception {
 
 		// Arrange
 		EmployeeResponse employee1 = new EmployeeResponse();
@@ -96,57 +87,54 @@ class EmployeeControllerTest {
 
 		Pageable pageable = PageRequest.of(0, 10);
 
-		Page<EmployeeResponse> employeePage =
-				new PageImpl<>(
-						List.of(employee1, employee2),
-						pageable,
-						2
-				);
+		Page<EmployeeResponse> employeePage = new PageImpl<>(List.of(employee1, employee2), pageable, 2);
 
-		when(employeeService.getAllEmployees(any(Pageable.class)))
-				.thenReturn(employeePage);
+		when(employeeService.getAllEmployees(any(Pageable.class))).thenReturn(employeePage);
 
 		// Act & Assert
-		mockMvc.perform(
-				get("/api/v1/employees")
-						.param("page", "0")
-						.param("size", "10")
-		)
-				.andExpect(status().isOk())
+		mockMvc.perform(get("/api/v1/employees").param("page", "0").param("size", "10")).andExpect(status().isOk())
 				.andExpect(jsonPath("$.content.length()").value(2))
 
 				.andExpect(jsonPath("$.content[0].id").value(1))
-				.andExpect(
-						jsonPath("$.content[0].firstName")
-								.value("Rahul")
-				)
-				.andExpect(
-						jsonPath("$.content[0].lastName")
-								.value("Kumar")
-				)
-				.andExpect(
-						jsonPath("$.content[0].email")
-								.value("rahul@gmail.com")
-				)
+				.andExpect(jsonPath("$.content[0].firstName").value("Rahul"))
+				.andExpect(jsonPath("$.content[0].lastName").value("Kumar"))
+				.andExpect(jsonPath("$.content[0].email").value("rahul@gmail.com"))
 
 				.andExpect(jsonPath("$.content[1].id").value(5))
-				.andExpect(
-						jsonPath("$.content[1].firstName")
-								.value("Vikash")
-				)
-				.andExpect(
-						jsonPath("$.content[1].lastName")
-								.value("Kumar")
-				)
-				.andExpect(
-						jsonPath("$.content[1].email")
-								.value("vikash@gmail.com")
-				)
+				.andExpect(jsonPath("$.content[1].firstName").value("Vikash"))
+				.andExpect(jsonPath("$.content[1].lastName").value("Kumar"))
+				.andExpect(jsonPath("$.content[1].email").value("vikash@gmail.com"))
 
-				.andExpect(jsonPath("$.totalElements").value(2))
-				.andExpect(jsonPath("$.totalPages").value(1))
-				.andExpect(jsonPath("$.size").value(10))
-				.andExpect(jsonPath("$.number").value(0));
+				.andExpect(jsonPath("$.totalElements").value(2)).andExpect(jsonPath("$.totalPages").value(1))
+				.andExpect(jsonPath("$.size").value(10)).andExpect(jsonPath("$.number").value(0));
+	}
+
+	@Test
+	void searchEmployees_shouldReturnMatchingEmployees() throws Exception {
+		// Arrange
+		EmployeeResponse employee = new EmployeeResponse();
+		employee.setId(1L);
+		employee.setFirstName("Rahul");
+		employee.setLastName("Kumar");
+		employee.setEmail("rahul@gmail.com");
+
+		Pageable pageable = PageRequest.of(0, 10);
+
+		Page<EmployeeResponse> employeePage = new PageImpl<>(List.of(employee), pageable, 1);
+
+		when(employeeService.searchEmployees("rahul", pageable)).thenReturn(employeePage);
+
+		// Act & Assert
+		mockMvc.perform(get("/api/v1/employees").param("search", "rahul").param("page", "0").param("size", "10"))
+				.andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].id").value(1))
+				.andExpect(jsonPath("$.content[0].firstName").value("Rahul"))
+				.andExpect(jsonPath("$.content[0].lastName").value("Kumar"))
+				.andExpect(jsonPath("$.content[0].email").value("rahul@gmail.com"))
+				.andExpect(jsonPath("$.totalElements").value(1)).andExpect(jsonPath("$.totalPages").value(1))
+				.andExpect(jsonPath("$.size").value(10)).andExpect(jsonPath("$.number").value(0));
+
+		verify(employeeService).searchEmployees("rahul", pageable);
 	}
 
 	@Test
@@ -159,33 +147,25 @@ class EmployeeControllerTest {
 		employee.setLastName("Kumar");
 		employee.setEmail("rahul@gmail.com");
 
-		when(employeeService.getEmployeeById(1L))
-				.thenReturn(employee);
+		when(employeeService.getEmployeeById(1L)).thenReturn(employee);
 
-		mockMvc.perform(get("/api/v1/employees/1"))
-				.andExpect(status().isOk())
-				.andExpect(content().json("""
-						{
-						    "id": 1,
-						    "firstName": "Rahul",
-						    "lastName": "Kumar",
-						    "email": "rahul@gmail.com"
-						}
-						"""));
+		mockMvc.perform(get("/api/v1/employees/1")).andExpect(status().isOk()).andExpect(content().json("""
+				{
+				    "id": 1,
+				    "firstName": "Rahul",
+				    "lastName": "Kumar",
+				    "email": "rahul@gmail.com"
+				}
+				"""));
 	}
 
 	@Test
 	void getEmployeeById_shouldReturnNotFound() throws Exception {
 
 		when(employeeService.getEmployeeById(999L))
-				.thenThrow(
-						new EmployeeNotFoundException(
-								"Employee not found with id: 999"
-						)
-				);
+				.thenThrow(new EmployeeNotFoundException("Employee not found with id: 999"));
 
-		mockMvc.perform(get("/api/v1/employees/999"))
-				.andExpect(status().isNotFound());
+		mockMvc.perform(get("/api/v1/employees/999")).andExpect(status().isNotFound());
 	}
 
 	@Test
@@ -210,35 +190,28 @@ class EmployeeControllerTest {
 		response.setLastName("Sharma");
 		response.setEmail("amit@gmail.com");
 
-		when(employeeService.createEmployee(any(EmployeeRequest.class)))
-				.thenReturn(response);
+		when(employeeService.createEmployee(any(EmployeeRequest.class))).thenReturn(response);
 
-		mockMvc.perform(
-				post("/api/v1/employees")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("""
-								{
-								    "firstName": "Amit",
-								    "lastName": "Sharma",
-								    "email": "amit@gmail.com",
-								    "phone": "9876543210",
-								    "department": "IT",
-								    "jobTitle": "Java Developer",
-								    "salary": 60000,
-								    "joiningDate": "2026-09-01",
-								    "role": "EMPLOYEE"
-								}
-								""")
-		)
-				.andExpect(status().isOk())
-				.andExpect(content().json("""
-						{
-						    "id": 10,
-						    "firstName": "Amit",
-						    "lastName": "Sharma",
-						    "email": "amit@gmail.com"
-						}
-						"""));
+		mockMvc.perform(post("/api/v1/employees").contentType(MediaType.APPLICATION_JSON).content("""
+				{
+				    "firstName": "Amit",
+				    "lastName": "Sharma",
+				    "email": "amit@gmail.com",
+				    "phone": "9876543210",
+				    "department": "IT",
+				    "jobTitle": "Java Developer",
+				    "salary": 60000,
+				    "joiningDate": "2026-09-01",
+				    "role": "EMPLOYEE"
+				}
+				""")).andExpect(status().isOk()).andExpect(content().json("""
+				{
+				    "id": 10,
+				    "firstName": "Amit",
+				    "lastName": "Sharma",
+				    "email": "amit@gmail.com"
+				}
+				"""));
 	}
 
 	@Test
@@ -251,67 +224,46 @@ class EmployeeControllerTest {
 		response.setLastName("Sharma");
 		response.setEmail("rahul.sharma@gmail.com");
 
-		when(
-				employeeService.updateEmployee(
-						any(Long.class),
-						any(EmployeeRequest.class)
-				)
-		).thenReturn(response);
+		when(employeeService.updateEmployee(any(Long.class), any(EmployeeRequest.class))).thenReturn(response);
 
-		mockMvc.perform(
-				put("/api/v1/employees/1")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("""
-								{
-								    "firstName": "Rahul",
-								    "lastName": "Sharma",
-								    "email": "rahul.sharma@gmail.com",
-								    "phone": "9876543210",
-								    "department": "IT",
-								    "jobTitle": "Senior Java Developer",
-								    "salary": 75000,
-								    "joiningDate": "2025-01-15",
-								    "role": "EMPLOYEE"
-								}
-								""")
-		)
-				.andExpect(status().isOk())
-				.andExpect(content().json("""
-						{
-						    "id": 1,
-						    "firstName": "Rahul",
-						    "lastName": "Sharma",
-						    "email": "rahul.sharma@gmail.com"
-						}
-						"""));
+		mockMvc.perform(put("/api/v1/employees/1").contentType(MediaType.APPLICATION_JSON).content("""
+				{
+				    "firstName": "Rahul",
+				    "lastName": "Sharma",
+				    "email": "rahul.sharma@gmail.com",
+				    "phone": "9876543210",
+				    "department": "IT",
+				    "jobTitle": "Senior Java Developer",
+				    "salary": 75000,
+				    "joiningDate": "2025-01-15",
+				    "role": "EMPLOYEE"
+				}
+				""")).andExpect(status().isOk()).andExpect(content().json("""
+				{
+				    "id": 1,
+				    "firstName": "Rahul",
+				    "lastName": "Sharma",
+				    "email": "rahul.sharma@gmail.com"
+				}
+				"""));
 	}
 
 	@Test
 	void deleteEmployee_shouldReturnNoContent() throws Exception {
 
-		doNothing()
-				.when(employeeService)
-				.deleteEmployee(1L);
+		doNothing().when(employeeService).deleteEmployee(1L);
 
-		mockMvc.perform(delete("/api/v1/employees/1"))
-				.andExpect(status().isNoContent());
+		mockMvc.perform(delete("/api/v1/employees/1")).andExpect(status().isNoContent());
 
-		verify(employeeService)
-				.deleteEmployee(1L);
+		verify(employeeService).deleteEmployee(1L);
 	}
 
 	@Test
 	void deleteEmployee_shouldReturnNotFound() throws Exception {
 
-		doThrow(
-				new EmployeeNotFoundException(
-						"Employee not found with id: 999"
-				)
-		)
-				.when(employeeService)
+		doThrow(new EmployeeNotFoundException("Employee not found with id: 999")).when(employeeService)
 				.deleteEmployee(999L);
 
-		mockMvc.perform(delete("/api/v1/employees/999"))
-				.andExpect(status().isNotFound());
+		mockMvc.perform(delete("/api/v1/employees/999")).andExpect(status().isNotFound());
 	}
 }

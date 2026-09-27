@@ -51,13 +51,16 @@ public class EmployeeController {
 	}
 
 	@GetMapping
-	public Page<EmployeeResponse> getAllEmployees(
-	        @RequestParam(defaultValue = "0") int page,
-	        @RequestParam(defaultValue = "10") int size) {
+	public Page<EmployeeResponse> getAllEmployees(@RequestParam(required = false) String search,
+			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
 
-	    Pageable pageable = PageRequest.of(page, size);
+		Pageable pageable = PageRequest.of(page, size);
 
-	    return employeeService.getAllEmployees(pageable);
+		if (search != null && !search.isBlank()) {
+			return employeeService.searchEmployees(search.trim(), pageable);
+		}
+
+		return employeeService.getAllEmployees(pageable);
 	}
 
 	@GetMapping("/{id}")
